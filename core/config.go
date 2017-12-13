@@ -6,14 +6,12 @@ package core
 
 import (
 	"bufio"
-	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net"
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/shadowsocks/overture/core/cache"
@@ -35,7 +33,7 @@ type Config struct {
 	CacheSize          int
 	RejectQtype        []uint16
 
-	DomainList    []string
+	AclList       []*regexp.Regexp
 	IPNetworkList []*net.IPNet
 	Hosts         *hosts.Hosts
 	Cache         *cache.Cache
@@ -100,25 +98,21 @@ func parseJson(path string) *Config {
 
 func (c *Config) getDomainList() {
 
-	var dl []string
+	var dl []*regexp.Regexp
+
 	f, err := ioutil.ReadFile(c.DomainFile)
 	if err != nil {
 		log.Error("Open Custom domain file failed: ", err)
 		return
 	}
 
-	re := regexp.MustCompile(`([\w\-\_]+\.[\w\.\-\_]+)[\/\*]*`)
-	if c.DomainBase64Decode {
-		fd, err := base64.StdEncoding.DecodeString(string(f))
-		if err != nil {
-			log.Error("Decode Custom domain failed: ", err)
-			return
+	re := regexp.MustCompile(`(\^.+\$)`)
+	acl := re.FindAllString(string(f), -1)
+	for _, item := range acl {
+		re, err := regexp.Compile(item)
+		if err == nil {
+			dl = append(dl, re)
 		}
-		fds := string(fd)
-		n := strings.Index(fds, "Whitelist Start")
-		dl = re.FindAllString(fds[:n], -1)
-	} else {
-		dl = re.FindAllString(string(f), -1)
 	}
 
 	if len(dl) > 0 {
@@ -126,7 +120,8 @@ func (c *Config) getDomainList() {
 	} else {
 		log.Warn("There is no element in domain file")
 	}
-	c.DomainList = dl
+
+	c.AclList = dl
 }
 
 func (c *Config) getIPNetworkList() {
