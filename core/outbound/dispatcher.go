@@ -2,11 +2,11 @@ package outbound
 
 import (
 	"net"
-	"strings"
+	"regexp"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/miekg/dns"
-	"github.com/shawn1m/overture/core/common"
+	"github.com/shadowsocks/overture/core/common"
 )
 
 type Dispatcher struct {
@@ -16,7 +16,7 @@ type Dispatcher struct {
 
 	ClientBundle       *ClientBundle
 	IPNetworkList      []*net.IPNet
-	DomainList         []string
+	AclList            []*regexp.Regexp
 	RedirectIPv6Record bool
 }
 
@@ -55,10 +55,10 @@ func (d *Dispatcher) ExchangeForDomain() bool {
 
 	qn := d.ClientBundle.QuestionMessage.Question[0].Name[:len(d.ClientBundle.QuestionMessage.Question[0].Name)-1]
 
-	for _, domain := range d.DomainList {
+	for _, re := range d.AclList {
 
-		if qn == domain || strings.HasSuffix(qn, "."+domain) {
-			log.Debug("Matched: Custom domain " + qn + " " + domain)
+		if re.MatchString(qn) {
+			log.Debug("Matched: Custom domain " + qn)
 			d.ClientBundle.UpdateFromDNSUpstream(d.AlternativeDNS)
 			d.ClientBundle.ExchangeFromRemote(true, true)
 			log.Debug("Finally use alternative DNS")

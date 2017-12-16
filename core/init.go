@@ -6,8 +6,8 @@
 package core
 
 import (
-	"github.com/shawn1m/overture/core/inbound"
-	"github.com/shawn1m/overture/core/outbound"
+	"github.com/shadowsocks/overture/core/inbound"
+	"github.com/shadowsocks/overture/core/outbound"
 )
 
 // Initiate the server with config file
@@ -21,7 +21,7 @@ func InitServer(configFilePath string) {
 		AlternativeDNS:     config.AlternativeDNS,
 		OnlyPrimaryDNS:     config.OnlyPrimaryDNS,
 		IPNetworkList:      config.IPNetworkList,
-		DomainList:         config.DomainList,
+		AclList:            config.AclList,
 		RedirectIPv6Record: config.RedirectIPv6Record,
 	}
 
